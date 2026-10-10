@@ -1,0 +1,1450 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bonnetjes Verwerken - Snel declareren & budget potjes</title>
+  <meta name="description" content="Overzichtelijk en responsive webformulier om bonnetjes te scannen, slepen, uploaden of plakken (CTRL+V), bedrag in te voeren en toe te wijzen aan budgetpotjes." />
+  
+  <!-- OpenGraph / Social Media Meta -->
+  <meta property="og:title" content="Bonnetjes Verwerken - Snel declareren & budget potjes" />
+  <meta property="og:description" content="Overzichtelijk en responsive webformulier om bonnetjes te scannen, slepen, uploaden of plakken (CTRL+V), bedrag in te voeren en toe te wijzen aan budgetpotjes." />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'system-ui', '-apple-system', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              200: '#c7d2fe',
+              300: '#a5b4fc',
+              400: '#818cf8',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+              800: '#3730a3',
+              900: '#312e81',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Aangepaste drag-and-drop feedback effecten */
+    .dropzone-active {
+      border-color: #4f46e5 !important;
+      background-color: #f5f3ff !important;
+      transform: scale(1.008);
+      box-shadow: 0 10px 25px -5px rgba(79, 70, 229, 0.15);
+    }
+    
+    /* Vloeiende overgangen */
+    .smooth-transition {
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    /* Klembord plak flash animatie */
+    @keyframes pasteFlash {
+      0% { box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.7); }
+      70% { box-shadow: 0 0 0 12px rgba(79, 70, 229, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(79, 70, 229, 0); }
+    }
+    .flash-paste {
+      animation: pasteFlash 0.8s ease-out;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-900 font-sans min-h-screen antialiased flex flex-col selection:bg-brand-500 selection:text-white">
+
+  <!-- =========================================================================
+       TOPBAR / HEADER
+       ========================================================================= -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-brand-600 text-white flex items-center justify-center shadow-sm shadow-brand-500/30">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2zM10 8.5a.5.5 0 11-1 0 .5.5 0 011 0zm5 5a.5.5 0 11-1 0 .5.5 0 011 0z"/>
+          </svg>
+        </div>
+        <div>
+          <h1 class="text-base sm:text-lg font-bold text-slate-900 tracking-tight flex items-center gap-2">
+            Bonnetjes Verwerken
+            <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-100 text-emerald-800">
+              Live Formulier
+            </span>
+          </h1>
+          <p class="text-xs text-slate-500 hidden sm:block">Uploaden, slepen of direct plakken met CTRL+V</p>
+        </div>
+      </div>
+
+      <!-- Snelle status en test-acties -->
+      <div class="flex items-center gap-2">
+        <button 
+          id="btnLoadDemo" 
+          type="button" 
+          class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg smooth-transition"
+          title="Laad een realistisch voorbeeld bonnetje om te testen">
+          <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+          </svg>
+          Voorbeeld laden
+        </button>
+        <span class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-mono font-medium text-slate-600 bg-slate-100 rounded-lg border border-slate-200">
+          <kbd class="font-semibold text-slate-800">Ctrl</kbd>+<kbd class="font-semibold text-slate-800">V</kbd> gereed
+        </span>
+      </div>
+    </div>
+  </header>
+
+  <!-- =========================================================================
+       HOOFD INHOUD
+       ========================================================================= -->
+  <main class="flex-1 max-w-4xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-10 space-y-8">
+    
+
+    <!-- Meldingen container (voor succes, fouten of OCR info) -->
+    <div id="toastContainer" class="hidden transition-all duration-300"></div>
+
+    <!-- =======================================================================
+         HET BONNETJES FORMULIER
+         ======================================================================= -->
+    <form id="receiptForm" class="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-6 sm:p-8 space-y-8" novalidate>
+      
+      <!-- -------------------------------------------------------------------
+           SECTIE 1: BONNETJE UPLOAD / PLAK-ZONE (BOVENAAN)
+           ------------------------------------------------------------------- -->
+      <section class="space-y-3">
+        <div class="flex items-center justify-between">
+          <label class="block text-sm font-bold text-slate-900 tracking-tight">
+            1. Bonnetje uploaden of plakken <span class="text-rose-500">*</span>
+          </label>
+          <span class="text-xs text-slate-500 font-medium">PNG, JPG, WEBP, PDF (max. 10MB)</span>
+        </div>
+
+        <!-- De interactieve Dropzone / Plakzone -->
+        <div 
+          id="dropzone" 
+          tabindex="0"
+          role="button"
+          aria-label="Dropzone voor bonnetje: sleep hierheen, klik om te kiezen of plak via klembord"
+          class="relative border-2 border-dashed border-slate-300 hover:border-brand-500 bg-slate-50/70 hover:bg-slate-50 rounded-xl p-6 sm:p-8 text-center cursor-pointer smooth-transition focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2">
+          
+          <!-- Verborgen file input -->
+          <input 
+            type="file" 
+            id="receiptFileInput" 
+            accept="image/*,application/pdf" 
+            class="hidden" 
+            aria-hidden="true" />
+
+          <!-- Lege toestand (zichtbaar wanneer er nog geen bestand is) -->
+          <div id="dropzoneEmptyState" class="space-y-4">
+            <div class="w-14 h-14 mx-auto rounded-full bg-brand-50 text-brand-600 flex items-center justify-center border border-brand-100 shadow-sm">
+              <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+              </svg>
+            </div>
+            
+            <div class="space-y-1">
+              <p class="text-sm font-semibold text-slate-900">
+                <span class="text-brand-600 hover:text-brand-700 underline underline-offset-2">Klik om een bestand te kiezen</span> of sleep het bonnetje hierheen
+              </p>
+              <p class="text-xs text-slate-500">
+                Of druk nu op <span class="font-mono bg-white px-1.5 py-0.5 rounded border border-slate-200 text-slate-700 font-semibold shadow-2xs">CTRL+V</span> om direct vanaf je klembord te plakken
+              </p>
+            </div>
+
+            <!-- Handige test-badges -->
+            <div class="pt-2 flex flex-wrap items-center justify-center gap-2">
+              <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium bg-white text-slate-600 border border-slate-200 shadow-2xs">
+                📋 Klembord (Plakken)
+              </span>
+              <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium bg-white text-slate-600 border border-slate-200 shadow-2xs">
+                🖱️ Slepen & Neerzetten
+              </span>
+              <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium bg-white text-slate-600 border border-slate-200 shadow-2xs">
+                📱 Camera / Foto
+              </span>
+            </div>
+          </div>
+
+          <!-- Preview toestand (zichtbaar wanneer een afbeelding/bestand is gekozen) -->
+          <div id="dropzonePreviewState" class="hidden text-left space-y-4">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
+              <div class="flex items-center gap-4 min-w-0">
+                <!-- Miniatuur preview afbeelding -->
+                <div class="relative w-16 h-20 sm:w-20 sm:h-24 bg-slate-100 rounded-lg overflow-hidden border border-slate-200 flex-shrink-0 flex items-center justify-center">
+                  <img id="previewThumbnail" src="" alt="Bonnetje preview" class="w-full h-full object-cover hidden" />
+                  <div id="previewPdfIcon" class="hidden text-rose-600 flex flex-col items-center">
+                    <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z"/>
+                    </svg>
+                    <span class="text-[9px] font-bold uppercase mt-0.5">PDF</span>
+                  </div>
+                </div>
+
+                <!-- Bestandsdetails -->
+                <div class="min-w-0">
+                  <div class="flex items-center gap-2">
+                    <h4 id="previewFileName" class="text-sm font-semibold text-slate-900 truncate">bonnetje.jpg</h4>
+                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 uppercase tracking-wide">
+                      Geladen
+                    </span>
+                  </div>
+                  <p id="previewFileSize" class="text-xs text-slate-500 mt-0.5 font-mono">1.2 MB</p>
+                  <p id="previewFileSource" class="text-xs text-slate-400 mt-0.5 flex items-center gap-1">
+                    <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    <span id="previewTimestamp">Zojuist toegevoegd</span>
+                  </p>
+                </div>
+              </div>
+
+              <!-- Preview Actieknoppen -->
+              <div class="flex items-center gap-2 w-full sm:w-auto justify-end border-t sm:border-t-0 pt-3 sm:pt-0 border-slate-100">
+                <button 
+                  type="button" 
+                  id="btnViewFullReceipt" 
+                  class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg smooth-transition">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                  </svg>
+                  Groot bekijken
+                </button>
+                <button 
+                  type="button" 
+                  id="btnRemoveReceipt" 
+                  class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 rounded-lg smooth-transition">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                  </svg>
+                  Verwijderen
+                </button>
+              </div>
+            </div>
+
+            <!-- OCR Ready Notice Hook -->
+            <div class="flex items-center gap-2 p-2.5 rounded-lg bg-indigo-50/80 border border-indigo-100 text-xs text-indigo-900">
+              <svg class="w-4 h-4 text-indigo-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+              <span>Afbeelding succesvol ingeladen. Je kunt nu het bedrag controleren en het potje toewijzen.</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Foutmelding voor bonnetje upload -->
+        <p id="receiptError" class="hidden text-xs text-rose-600 font-medium flex items-center gap-1 pt-1">
+          <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+          Voeg een afbeelding van het bonnetje toe (uploaden, slepen of plakken).
+        </p>
+      </section>
+
+      <!-- -------------------------------------------------------------------
+           SECTIE 2: BEDRAG & EXTRA DETAILS
+           ------------------------------------------------------------------- -->
+      <section class="space-y-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          
+          <!-- Invoerveld: Bedrag in euro's (€) -->
+          <div class="space-y-1.5">
+            <label for="amountInput" class="block text-sm font-bold text-slate-900 tracking-tight">
+              2. Bedrag in euro’s (€) <span class="text-rose-500">*</span>
+            </label>
+            <div class="relative rounded-xl shadow-2xs">
+              <!-- Euro symbool prefix -->
+              <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                <span class="text-slate-500 font-semibold text-base sm:text-lg">€</span>
+              </div>
+              <input 
+                type="text" 
+                id="amountInput" 
+                name="amount" 
+                inputmode="decimal" 
+                placeholder="0.00" 
+                autocomplete="off"
+                required
+                class="block w-full pl-9 pr-14 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 font-mono text-lg font-bold placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 smooth-transition" />
+              <!-- Valuta aanduiding postfix -->
+              <div class="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none">
+                <span class="text-xs font-medium text-slate-400 font-mono">EUR</span>
+              </div>
+            </div>
+            
+            <div class="flex items-center justify-between text-xs pt-0.5">
+              <span id="amountHint" class="text-slate-500">Formaat: bijv. <code class="font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-700">14.95</code> of <code class="font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-700">14,95</code></span>
+              <!-- Snelle afrond hulp knoppen -->
+              <div class="flex gap-1.5">
+                <button type="button" class="quick-amount-btn text-[11px] font-mono text-brand-600 hover:text-brand-800 bg-brand-50 hover:bg-brand-100 px-1.5 py-0.5 rounded" data-val="10.00">€10</button>
+                <button type="button" class="quick-amount-btn text-[11px] font-mono text-brand-600 hover:text-brand-800 bg-brand-50 hover:bg-brand-100 px-1.5 py-0.5 rounded" data-val="25.00">€25</button>
+                <button type="button" class="quick-amount-btn text-[11px] font-mono text-brand-600 hover:text-brand-800 bg-brand-50 hover:bg-brand-100 px-1.5 py-0.5 rounded" data-val="50.00">€50</button>
+              </div>
+            </div>
+            <!-- Bedrag validatiefout -->
+            <p id="amountError" class="hidden text-xs text-rose-600 font-medium flex items-center gap-1">
+              <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+              Voer een geldig bedrag in (minimaal € 0.01).
+            </p>
+          </div>
+
+          <!-- Invoerveld: Winkel / Leverancier (Optioneel maar essentieel voor bonnetjes) -->
+          <div class="space-y-1.5">
+            <label for="merchantInput" class="block text-sm font-bold text-slate-900 tracking-tight">
+              Winkel / Leverancier
+            </label>
+            <div class="relative rounded-xl shadow-2xs">
+              <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                </svg>
+              </div>
+              <input 
+                type="text" 
+                id="merchantInput" 
+                name="merchant" 
+                placeholder="bijv. Albert Heijn, Shell, Gamma..." 
+                class="block w-full pl-10 pr-3.5 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 smooth-transition" />
+            </div>
+            <p class="text-xs text-slate-500">Helpt bij het snel terugvinden in de administratie</p>
+          </div>
+
+          <!-- Datum van het bonnetje -->
+          <div class="space-y-1.5">
+            <label for="receiptDate" class="block text-sm font-bold text-slate-900 tracking-tight">
+              Datum bonnetje
+            </label>
+            <input 
+              type="date" 
+              id="receiptDate" 
+              name="date" 
+              class="block w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 smooth-transition" />
+          </div>
+
+          <!-- Korte omschrijving / Notitie -->
+          <div class="space-y-1.5">
+            <label for="descriptionInput" class="block text-sm font-bold text-slate-900 tracking-tight">
+              Korte omschrijving / Notitie
+            </label>
+            <input 
+              type="text" 
+              id="descriptionInput" 
+              name="description" 
+              placeholder="bijv. Teamlunch of kantoorartikelen" 
+              class="block w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 smooth-transition" />
+          </div>
+
+        </div>
+      </section>
+
+      <!-- -------------------------------------------------------------------
+           SECTIE 3: POTJE SELECTEREN ('Uit welk potje moet het?')
+           ------------------------------------------------------------------- -->
+      <section class="space-y-4 pt-2 border-t border-slate-100">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+          <div>
+            <label class="block text-base font-bold text-slate-900 tracking-tight">
+              3. Uit welk potje moet het? <span class="text-rose-500">*</span>
+            </label>
+            <p class="text-xs text-slate-500">Kies één van de 5 onderstaande categorieën voor je budget</p>
+          </div>
+          
+          <!-- Optionele dropdown fallback/synchronisatie weergave -->
+          <div class="text-xs text-slate-500 flex items-center gap-1.5 self-start sm:self-auto">
+            <span class="text-slate-400">Of snelle dropdown:</span>
+            <select 
+              id="potjeSelectDropdown" 
+              aria-label="Kies potje via dropdown"
+              class="bg-slate-50 border border-slate-300 rounded-lg text-xs py-1 px-2 text-slate-700 focus:ring-1 focus:ring-brand-500 focus:outline-none">
+              <option value="" disabled selected>-- Maak een keuze --</option>
+              <option value="the_gig">⛵ The Gig</option>
+              <option value="de_neeltje_jans">⛵ De Neeltje Jans</option>
+              <option value="spelgeld">🎲 Spelgeld</option>
+              <option value="keientrekker">⛵ Keientrekker</option>
+              <option value="overig">📦 Overig</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- ===============================================================
+             DE 5 POTJES KEUZE-CHIPS / RADIO TILES
+             1. The Gig  2. De Neeltje Jans  3. Spelgeld  4. Keientrekker  5. Overig
+             =============================================================== -->
+        <div id="potjesGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          
+          <!-- POTJE 1: The Gig -->
+          <label class="potje-tile group relative flex items-start gap-3.5 p-4 rounded-xl border-2 border-slate-200 bg-white hover:border-brand-400 hover:bg-slate-50/50 cursor-pointer smooth-transition shadow-2xs">
+            <input type="radio" name="potje" value="the_gig" class="sr-only" required />
+            <div class="w-12 h-12 rounded-lg bg-white overflow-hidden flex items-center justify-center flex-shrink-0 group-hover:scale-105 smooth-transition border border-indigo-200 shadow-2xs p-0.5">
+              <img 
+                src="/the_gig_boot.jpg?v=natural_bow" 
+                alt="The Gig" 
+                class="w-full h-full object-contain" 
+                referrerpolicy="no-referrer" />
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center justify-between">
+                <span class="text-sm font-bold text-slate-900 group-hover:text-brand-700">The Gig</span>
+                <span class="check-icon hidden text-brand-600">
+                  <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                </span>
+              </div>
+              <p class="text-xs text-slate-500 mt-0.5 leading-snug">Uitgaven voor The Gig</p>
+            </div>
+          </label>
+
+          <!-- POTJE 2: De Neeltje Jans -->
+          <label class="potje-tile group relative flex items-start gap-3.5 p-4 rounded-xl border-2 border-slate-200 bg-white hover:border-brand-400 hover:bg-slate-50/50 cursor-pointer smooth-transition shadow-2xs">
+            <input type="radio" name="potje" value="de_neeltje_jans" class="sr-only" />
+            <div class="w-12 h-12 rounded-lg bg-white overflow-hidden flex items-center justify-center flex-shrink-0 group-hover:scale-105 smooth-transition border border-sky-200 shadow-2xs p-0.5">
+              <img 
+                src="/neeltje_jans_boot.jpg?v=exact" 
+                alt="De Neeltje Jans" 
+                class="w-full h-full object-contain" 
+                referrerpolicy="no-referrer" />
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center justify-between">
+                <span class="text-sm font-bold text-slate-900 group-hover:text-brand-700">De Neeltje Jans</span>
+                <span class="check-icon hidden text-brand-600">
+                  <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                </span>
+              </div>
+              <p class="text-xs text-slate-500 mt-0.5 leading-snug">Uitgaven voor De Neeltje Jans</p>
+            </div>
+          </label>
+
+          <!-- POTJE 3: Spelgeld -->
+          <label class="potje-tile group relative flex items-start gap-3.5 p-4 rounded-xl border-2 border-slate-200 bg-white hover:border-brand-400 hover:bg-slate-50/50 cursor-pointer smooth-transition shadow-2xs">
+            <input type="radio" name="potje" value="spelgeld" class="sr-only" />
+            <div class="w-10 h-10 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center flex-shrink-0 group-hover:scale-105 smooth-transition border border-amber-100">
+              <span class="text-lg">🎲</span>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center justify-between">
+                <span class="text-sm font-bold text-slate-900 group-hover:text-brand-700">Spelgeld</span>
+                <span class="check-icon hidden text-brand-600">
+                  <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                </span>
+              </div>
+              <p class="text-xs text-slate-500 mt-0.5 leading-snug">Vrijetijd, spellen, fun, toernooien & amusement</p>
+            </div>
+          </label>
+
+          <!-- POTJE 4: Keientrekker -->
+          <label class="potje-tile group relative flex items-start gap-3.5 p-4 rounded-xl border-2 border-slate-200 bg-white hover:border-brand-400 hover:bg-slate-50/50 cursor-pointer smooth-transition shadow-2xs">
+            <input type="radio" name="potje" value="keientrekker" class="sr-only" />
+            <div class="w-12 h-12 rounded-lg bg-white overflow-hidden flex items-center justify-center flex-shrink-0 group-hover:scale-105 smooth-transition border border-stone-200 shadow-2xs p-0.5">
+              <img 
+                src="/keientrekker_boot.jpg?v=zijaanzicht" 
+                alt="De Keientrekker" 
+                class="w-full h-full object-contain" 
+                referrerpolicy="no-referrer" />
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center justify-between">
+                <span class="text-sm font-bold text-slate-900 group-hover:text-brand-700">Keientrekker</span>
+                <span class="check-icon hidden text-brand-600">
+                  <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                </span>
+              </div>
+              <p class="text-xs text-slate-500 mt-0.5 leading-snug">Uitgaven voor De Keientrekker</p>
+            </div>
+          </label>
+
+          <!-- POTJE 5: Overig -->
+          <label class="potje-tile group relative flex items-start gap-3.5 p-4 rounded-xl border-2 border-slate-200 bg-white hover:border-brand-400 hover:bg-slate-50/50 cursor-pointer smooth-transition shadow-2xs sm:col-span-2 lg:col-span-2">
+            <input type="radio" name="potje" value="overig" class="sr-only" />
+            <div class="w-10 h-10 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center flex-shrink-0 group-hover:scale-105 smooth-transition border border-slate-200">
+              <span class="text-lg">📦</span>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center justify-between">
+                <span class="text-sm font-bold text-slate-900 group-hover:text-brand-700">Overig</span>
+                <span class="check-icon hidden text-brand-600">
+                  <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                </span>
+              </div>
+              <p class="text-xs text-slate-500 mt-0.5 leading-snug">Algemene en onvoorziene uitgaven</p>
+            </div>
+          </label>
+
+        </div>
+
+        <!-- Foutmelding voor potje keuze -->
+        <p id="potjeError" class="hidden text-xs text-rose-600 font-medium flex items-center gap-1">
+          <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+          Selecteer uit welk potje dit bonnetje betaald moet worden.
+        </p>
+      </section>
+
+      <!-- -------------------------------------------------------------------
+           SECTIE 4: VERSTUUR-KNOP & ACTIES
+           ------------------------------------------------------------------- -->
+      <div class="pt-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3">
+        <button 
+          type="button" 
+          id="btnResetForm" 
+          class="w-full sm:w-auto px-4 py-2.5 text-xs font-semibold text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-xl smooth-transition">
+          Formulier wissen
+        </button>
+
+        <button 
+          type="submit" 
+          id="btnSubmit" 
+          class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-xl font-bold text-sm text-white bg-brand-600 hover:bg-brand-700 active:bg-brand-800 shadow-md shadow-brand-500/25 hover:shadow-lg hover:shadow-brand-500/35 active:scale-[0.99] smooth-transition cursor-pointer">
+          <!-- Standaard verzendicoon -->
+          <svg id="submitIcon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          <!-- Laad-spinner (verborgen bij start) -->
+          <svg id="submitSpinner" class="hidden w-5 h-5 animate-spin text-white" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <span id="submitBtnText">Bonnetje verwerken</span>
+        </button>
+      </div>
+
+    </form>
+
+    <!-- =======================================================================
+         OVERZICHT VAN RECENT VERWERKTE BONNETJES
+         ======================================================================= -->
+    <section class="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-6 sm:p-7 space-y-4">
+      <div class="flex items-center justify-between">
+        <div>
+          <h3 class="text-base font-bold text-slate-900 tracking-tight flex items-center gap-2">
+            Recent verwerkte bonnetjes
+            <span id="receiptsCountBadge" class="px-2 py-0.5 rounded-full text-xs font-mono font-semibold bg-slate-100 text-slate-700">0</span>
+          </h3>
+          <p class="text-xs text-slate-500 mt-0.5">Overzicht van zojuist opgeslagen bonnetjes in deze sessie</p>
+        </div>
+
+        <button 
+          id="btnClearHistory" 
+          type="button" 
+          class="text-xs text-slate-400 hover:text-slate-700 font-medium hidden">
+          Geschiedenis wissen
+        </button>
+      </div>
+
+      <!-- Lege lijst placeholder -->
+      <div id="emptyReceiptsState" class="py-10 text-center border border-dashed border-slate-200 rounded-xl bg-slate-50/50">
+        <svg class="w-10 h-10 mx-auto text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/>
+        </svg>
+        <p class="mt-2 text-xs font-semibold text-slate-600">Nog geen verwerkte bonnetjes</p>
+        <p class="text-xs text-slate-400">Verstuur het bovenstaande formulier om je eerste declaratie te zien.</p>
+      </div>
+
+      <!-- Lijst met verwerkte bonnetjes -->
+      <div id="processedReceiptsList" class="divide-y divide-slate-100 hidden"></div>
+    </section>
+
+  </main>
+
+  <!-- =========================================================================
+       MODAL: GROOT BEKIJKEN VAN BONNETJE
+       ========================================================================= -->
+  <div id="imagePreviewModal" class="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden shadow-2xl flex flex-col">
+      <div class="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
+        <h4 id="modalTitle" class="text-sm font-bold text-slate-900">Bonnetje bekijken</h4>
+        <button id="btnCloseModal" type="button" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="p-4 bg-slate-100 flex-1 overflow-auto flex items-center justify-center">
+        <img id="modalImage" src="" alt="Volledige preview" class="max-w-full max-h-[70vh] object-contain rounded-lg shadow-xs" />
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       FOOTER
+       ========================================================================= -->
+  <footer class="border-t border-slate-200 bg-white py-6 mt-12 text-center text-xs text-slate-500">
+    <div class="max-w-4xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+      <p>Bonnetjes Verwerken &mdash; Modern, modulair formulier met klembord- & dropzone-ondersteuning.</p>
+      <div class="flex items-center gap-3">
+        <span class="text-slate-400">&bull;</span>
+        <span>HTML5 &bull; Tailwind CSS &bull; Vanilla JS</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- =========================================================================
+       VANILLA JAVASCRIPT LOGICA
+       Overzichtelijk, modulair en voorbereid op OCR / Database backend integraties.
+       ========================================================================= -->
+  <script>
+    /**
+     * @fileoverview Bonnetjes Verwerking Formulier
+     * Modulaire Vanilla JavaScript implementatie voor:
+     * - Drag & Drop bestandsuploads
+     * - Klembord paste luisteraar (CTRL+V / CMD+V)
+     * - Live preview & bestandsbeheer
+     * - Valuta / decimaal formattering (€ 00.00)
+     * - 5 aanpasbare budgetpotjes
+     * - Hook points voor OCR en Backend API
+     */
+
+    // =========================================================================
+    // 1. STATE & CONFIGURATIE
+    // =========================================================================
+    const PotjesConfig = {
+      the_gig:         { label: 'The Gig',         icon: '⛵', image: '/the_gig_boot.jpg?v=natural_bow', color: 'indigo' },
+      de_neeltje_jans: { label: 'De Neeltje Jans', icon: '⛵', image: '/neeltje_jans_boot.jpg?v=exact', color: 'sky' },
+      spelgeld:        { label: 'Spelgeld',        icon: '🎲', color: 'amber' },
+      keientrekker:    { label: 'Keientrekker',    icon: '⛵', image: '/keientrekker_boot.jpg?v=zijaanzicht', color: 'stone' },
+      overig:          { label: 'Overig',          icon: '📦', color: 'slate' }
+    };
+
+    const state = {
+      receiptFile: null,        // Bevat het huidige File object of DataURL
+      receiptDataUrl: null,     // Base64 string voor weergave
+      selectedPotje: null,      // Key van het geselecteerde potje ('boodschappen', etc.)
+      amountValue: null,        // Numerieke waarde (bijv. 14.95)
+      processedReceipts: []     // Geschiedenis van verwerkte bonnetjes in deze sessie
+    };
+
+    // =========================================================================
+    // 2. DOM ELEMENT REFERENTIES
+    // =========================================================================
+    const DOM = {
+      form: document.getElementById('receiptForm'),
+      dropzone: document.getElementById('dropzone'),
+      fileInput: document.getElementById('receiptFileInput'),
+      dropzoneEmpty: document.getElementById('dropzoneEmptyState'),
+      dropzonePreview: document.getElementById('dropzonePreviewState'),
+      previewThumbnail: document.getElementById('previewThumbnail'),
+      previewPdfIcon: document.getElementById('previewPdfIcon'),
+      previewFileName: document.getElementById('previewFileName'),
+      previewFileSize: document.getElementById('previewFileSize'),
+      previewTimestamp: document.getElementById('previewTimestamp'),
+      btnRemoveReceipt: document.getElementById('btnRemoveReceipt'),
+      btnViewFullReceipt: document.getElementById('btnViewFullReceipt'),
+      receiptError: document.getElementById('receiptError'),
+      
+      amountInput: document.getElementById('amountInput'),
+      amountError: document.getElementById('amountError'),
+      merchantInput: document.getElementById('merchantInput'),
+      receiptDate: document.getElementById('receiptDate'),
+      descriptionInput: document.getElementById('descriptionInput'),
+
+      potjesGrid: document.getElementById('potjesGrid'),
+      potjeDropdown: document.getElementById('potjeSelectDropdown'),
+      potjeError: document.getElementById('potjeError'),
+      potjeTiles: document.querySelectorAll('.potje-tile'),
+
+      btnSubmit: document.getElementById('btnSubmit'),
+      btnReset: document.getElementById('btnResetForm'),
+      btnLoadDemo: document.getElementById('btnLoadDemo'),
+      submitIcon: document.getElementById('submitIcon'),
+      submitSpinner: document.getElementById('submitSpinner'),
+      submitBtnText: document.getElementById('submitBtnText'),
+
+      toastContainer: document.getElementById('toastContainer'),
+      processedList: document.getElementById('processedReceiptsList'),
+      emptyStateList: document.getElementById('emptyReceiptsState'),
+      receiptsCountBadge: document.getElementById('receiptsCountBadge'),
+      btnClearHistory: document.getElementById('btnClearHistory'),
+
+      modal: document.getElementById('imagePreviewModal'),
+      modalImage: document.getElementById('modalImage'),
+      btnCloseModal: document.getElementById('btnCloseModal'),
+    };
+
+    // =========================================================================
+    // 3. INITIALISATIE
+    // =========================================================================
+    document.addEventListener('DOMContentLoaded', () => {
+      initDefaults();
+      initEventListeners();
+    });
+
+    /**
+     * Stelt standaard waarden in zoals de huidige datum
+     */
+    function initDefaults() {
+      // Zet datum standaard op vandaag (JJJJ-MM-DD)
+      const today = new Date().toISOString().split('T')[0];
+      DOM.receiptDate.value = today;
+    }
+
+    /**
+     * Registreert alle event listeners op overzichtelijke wijze
+     */
+    function initEventListeners() {
+      // 1. Dropzone & File Select
+      DOM.dropzone.addEventListener('click', (e) => {
+        // Alleen triggeren als niet op een actieknop binnen de preview geklikt is
+        if (!e.target.closest('#btnRemoveReceipt') && !e.target.closest('#btnViewFullReceipt')) {
+          DOM.fileInput.click();
+        }
+      });
+      DOM.fileInput.addEventListener('change', (e) => handleFileSelect(e.target.files));
+
+      // Drag and drop events
+      ['dragenter', 'dragover'].forEach(name => {
+        DOM.dropzone.addEventListener(name, handleDragOver, false);
+      });
+      ['dragleave', 'drop'].forEach(name => {
+        DOM.dropzone.addEventListener(name, handleDragLeave, false);
+      });
+      DOM.dropzone.addEventListener('drop', handleDrop, false);
+
+      // Klembord paste event: luister globaal op window zodat CTRL+V overal werkt!
+      window.addEventListener('paste', handlePaste);
+
+      // Knoppen binnen dropzone
+      DOM.btnRemoveReceipt.addEventListener('click', (e) => {
+        e.stopPropagation();
+        removeReceipt();
+      });
+
+      DOM.btnViewFullReceipt.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openReceiptModal();
+      });
+
+      // 2. Bedrag formatteren & valideren
+      DOM.amountInput.addEventListener('input', handleAmountInput);
+      DOM.amountInput.addEventListener('blur', handleAmountBlur);
+      DOM.amountInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          handleAmountBlur();
+        }
+      });
+
+      // Snelle afrondknoppen (€10, €25, €50)
+      document.querySelectorAll('.quick-amount-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const val = btn.getAttribute('data-val');
+          DOM.amountInput.value = val;
+          state.amountValue = parseFloat(val);
+          DOM.amountError.classList.add('hidden');
+        });
+      });
+
+      // 3. Potjes selectie (Tiles + Dropdown synchronisatie)
+      DOM.potjeTiles.forEach(tile => {
+        tile.addEventListener('click', () => {
+          const radio = tile.querySelector('input[type="radio"]');
+          if (radio) {
+            selectPotje(radio.value);
+          }
+        });
+      });
+
+      DOM.potjeDropdown.addEventListener('change', (e) => {
+        if (e.target.value) {
+          selectPotje(e.target.value);
+        }
+      });
+
+      // 4. Formulier versturen & resetten
+      DOM.form.addEventListener('submit', handleSubmit);
+      DOM.btnReset.addEventListener('click', resetForm);
+      DOM.btnLoadDemo.addEventListener('click', loadDemoReceipt);
+
+      // 5. Geschiedenis wissen
+      DOM.btnClearHistory.addEventListener('click', clearHistory);
+
+      // 6. Modal sluiten
+      DOM.btnCloseModal.addEventListener('click', closeReceiptModal);
+      DOM.modal.addEventListener('click', (e) => {
+        if (e.target === DOM.modal) closeReceiptModal();
+      });
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && !DOM.modal.classList.contains('hidden')) {
+          closeReceiptModal();
+        }
+      });
+    }
+
+    // =========================================================================
+    // 4. BESTANDSUPLOAD, DRAG & DROP EN KLEMBORD (CTRL+V) HANDLERS
+    // =========================================================================
+
+    /**
+     * Verwerkt bestanden die via de file input zijn geselecteerd
+     * @param {FileList} files 
+     */
+    function handleFileSelect(files) {
+      if (!files || files.length === 0) return;
+      processFile(files[0], 'Geüpload vanaf apparaat');
+    }
+
+    /**
+     * Dragover handler: voegt visuele active-stijl toe aan dropzone
+     */
+    function handleDragOver(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      DOM.dropzone.classList.add('dropzone-active');
+    }
+
+    /**
+     * Dragleave handler: verwijdert visuele active-stijl
+     */
+    function handleDragLeave(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      DOM.dropzone.classList.remove('dropzone-active');
+    }
+
+    /**
+     * Drop handler: vangt gedropt bestand op
+     */
+    function handleDrop(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      DOM.dropzone.classList.remove('dropzone-active');
+
+      const dt = e.dataTransfer;
+      if (dt && dt.files && dt.files.length > 0) {
+        processFile(dt.files[0], 'Gedropt via drag & drop');
+      }
+    }
+
+    /**
+     * Klembord paste handler (CTRL+V / CMD+V)
+     * Vangt afbeeldingen op die vanaf het klembord worden geplakt
+     */
+    function handlePaste(e) {
+      // Voorkom onderschepping als de gebruiker simpelweg tekst plakt in een tekstveld
+      const activeTag = document.activeElement ? document.activeElement.tagName.toLowerCase() : '';
+      const isInputFocused = (activeTag === 'input' || activeTag === 'textarea');
+
+      const clipboardData = e.clipboardData || window.clipboardData;
+      if (!clipboardData || !clipboardData.items) return;
+
+      let imageItemFound = false;
+
+      for (let i = 0; i < clipboardData.items.length; i++) {
+        const item = clipboardData.items[i];
+        if (item.type.indexOf('image') !== -1) {
+          const blob = item.getAsFile();
+          if (blob) {
+            imageItemFound = true;
+            
+            // Creëer een bestand met herkenbare naam
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+            const file = new File([blob], `geplakt-bonnetje-${timestamp}.png`, { type: blob.type });
+
+            processFile(file, 'Geplakt via klembord (CTRL+V)');
+            
+            // Geef visuele flash feedback op de dropzone
+            DOM.dropzone.classList.add('flash-paste');
+            setTimeout(() => DOM.dropzone.classList.remove('flash-paste'), 900);
+
+            showToast('📋 Afbeelding succesvol geplakt vanaf je klembord!', 'success');
+            break;
+          }
+        }
+      }
+
+      // Als een afbeelding werd geplakt terwijl een inputveld de focus had, stop event default
+      if (imageItemFound && isInputFocused) {
+        e.preventDefault();
+      }
+    }
+
+    /**
+     * Valideert en leest een bestand in
+     * @param {File} file 
+     * @param {string} sourceHint 
+     */
+    function processFile(file, sourceHint = 'Geüpload') {
+      // Basis validatie op bestandsgrootte (max 10MB)
+      const maxSize = 10 * 1024 * 1024;
+      if (file.size > maxSize) {
+        showToast('Het bestand is te groot. Maximaal 10MB toegestaan.', 'error');
+        return;
+      }
+
+      state.receiptFile = file;
+      DOM.receiptError.classList.add('hidden');
+
+      // Bestandsgrootte formatteren (KB / MB)
+      const formattedSize = file.size > 1024 * 1024 
+        ? (file.size / (1024 * 1024)).toFixed(2) + ' MB'
+        : Math.round(file.size / 1024) + ' KB';
+
+      DOM.previewFileName.textContent = file.name;
+      DOM.previewFileSize.textContent = formattedSize;
+      DOM.previewTimestamp.textContent = `${sourceHint} &bull; ${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+
+      // Inlezen als DataURL voor weergave
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        state.receiptDataUrl = e.target.result;
+
+        if (file.type === 'application/pdf') {
+          DOM.previewThumbnail.classList.add('hidden');
+          DOM.previewPdfIcon.classList.remove('hidden');
+        } else {
+          DOM.previewPdfIcon.classList.add('hidden');
+          DOM.previewThumbnail.src = state.receiptDataUrl;
+          DOM.previewThumbnail.classList.remove('hidden');
+        }
+
+        // Toon preview toestand
+        DOM.dropzoneEmpty.classList.add('hidden');
+        DOM.dropzonePreview.classList.remove('hidden');
+
+        // HOOK: Hier kun je optioneel direct OCR aftrappen!
+        triggerOcrPreRecognition(file, state.receiptDataUrl);
+      };
+
+      reader.readAsDataURL(file);
+    }
+
+    /**
+     * Verwijdert het huidige geselecteerde bonnetje
+     */
+    function removeReceipt() {
+      state.receiptFile = null;
+      state.receiptDataUrl = null;
+      DOM.fileInput.value = '';
+      DOM.previewThumbnail.src = '';
+      DOM.previewThumbnail.classList.add('hidden');
+      DOM.previewPdfIcon.classList.add('hidden');
+
+      DOM.dropzonePreview.classList.add('hidden');
+      DOM.dropzoneEmpty.classList.remove('hidden');
+    }
+
+    /**
+     * Opent de grote preview modal
+     */
+    function openReceiptModal() {
+      if (!state.receiptDataUrl) return;
+      DOM.modalImage.src = state.receiptDataUrl;
+      DOM.modalTitle.textContent = state.receiptFile ? state.receiptFile.name : 'Bonnetje preview';
+      DOM.modal.classList.remove('hidden');
+      DOM.modal.classList.add('flex');
+    }
+
+    function closeReceiptModal() {
+      DOM.modal.classList.add('hidden');
+      DOM.modal.classList.remove('flex');
+    }
+
+    // =========================================================================
+    // 5. BEDRAG FORMATTERING & VALIDATIE HANDLERS
+    // =========================================================================
+
+    /**
+     * Schoonmaken tijdens het typen
+     */
+    function handleAmountInput(e) {
+      let val = e.target.value;
+      
+      // Vervang komma's tijdelijk door punten voor uniforme afhandeling
+      // Verwijder ongeldige tekens behalve cijfers, komma's en punten
+      val = val.replace(/[^0-9.,]/g, '');
+      
+      // Sta slechts één decimaal scheidingsteken toe
+      const parts = val.split(/[.,]/);
+      if (parts.length > 2) {
+        val = parts[0] + '.' + parts.slice(1).join('');
+      }
+
+      e.target.value = val;
+
+      if (val) {
+        DOM.amountError.classList.add('hidden');
+      }
+    }
+
+    /**
+     * Automatisch formatteren naar '00.00' bij het verlaten van het veld (onblur)
+     */
+    function handleAmountBlur() {
+      const raw = DOM.amountInput.value.trim();
+      if (!raw) {
+        state.amountValue = null;
+        return;
+      }
+
+      // Normaliseer komma naar punt voor float parsing
+      const normalized = raw.replace(',', '.');
+      const num = parseFloat(normalized);
+
+      if (isNaN(num) || num <= 0) {
+        DOM.amountError.classList.remove('hidden');
+        state.amountValue = null;
+      } else {
+        DOM.amountError.classList.add('hidden');
+        // Formatteer strikt op 2 decimalen (bijv. 12.50 of 0.99)
+        const formatted = num.toFixed(2);
+        DOM.amountInput.value = formatted;
+        state.amountValue = num;
+      }
+    }
+
+    // =========================================================================
+    // 6. POTJE SELECTEREN ('Uit welk potje moet het?')
+    // =========================================================================
+
+    /**
+     * Selecteert een potje, past styling toe en synchroniseert zowel de radio
+     * knoppen als het <select> element.
+     * @param {string} potjeKey 
+     */
+    function selectPotje(potjeKey) {
+      if (!PotjesConfig[potjeKey]) return;
+
+      state.selectedPotje = potjeKey;
+      DOM.potjeError.classList.add('hidden');
+
+      // Update visuele toestand van alle tiles
+      DOM.potjeTiles.forEach(tile => {
+        const radio = tile.querySelector('input[type="radio"]');
+        const checkIcon = tile.querySelector('.check-icon');
+        const isMatch = (radio && radio.value === potjeKey);
+
+        if (isMatch) {
+          radio.checked = true;
+          tile.classList.add('border-brand-600', 'bg-brand-50/40', 'ring-2', 'ring-brand-500/20');
+          tile.classList.remove('border-slate-200', 'bg-white');
+          if (checkIcon) checkIcon.classList.remove('hidden');
+        } else {
+          if (radio) radio.checked = false;
+          tile.classList.remove('border-brand-600', 'bg-brand-50/40', 'ring-2', 'ring-brand-500/20');
+          tile.classList.add('border-slate-200', 'bg-white');
+          if (checkIcon) checkIcon.classList.add('hidden');
+        }
+      });
+
+      // Synchroniseer met de dropdown <select>
+      if (DOM.potjeDropdown) {
+        DOM.potjeDropdown.value = potjeKey;
+      }
+    }
+
+    // =========================================================================
+    // 7. FORM SUBMIT & VERWERKING (INCL. HOOKS VOOR BACKEND / OCR)
+    // =========================================================================
+
+    /**
+     * Valideert het complete formulier
+     * @returns {boolean} Is het formulier geldig?
+     */
+    function validateForm() {
+      let isValid = true;
+
+      // 1. Controleer bonnetje
+      if (!state.receiptFile) {
+        DOM.receiptError.classList.remove('hidden');
+        isValid = false;
+      } else {
+        DOM.receiptError.classList.add('hidden');
+      }
+
+      // 2. Controleer bedrag
+      handleAmountBlur();
+      if (!state.amountValue || state.amountValue <= 0) {
+        DOM.amountError.classList.remove('hidden');
+        isValid = false;
+      } else {
+        DOM.amountError.classList.add('hidden');
+      }
+
+      // 3. Controleer potje selectie
+      if (!state.selectedPotje) {
+        DOM.potjeError.classList.remove('hidden');
+        isValid = false;
+      } else {
+        DOM.potjeError.classList.add('hidden');
+      }
+
+      return isValid;
+    }
+
+    /**
+     * Submit handler voor het formulier
+     */
+    async function handleSubmit(e) {
+      e.preventDefault();
+
+      if (!validateForm()) {
+        showToast('Vul alle verplichte velden correct in.', 'error');
+        return;
+      }
+
+      // Start laadstatus
+      setSubmittingState(true);
+
+      const formDataPayload = {
+        id: 'REC-' + Date.now().toString(36).toUpperCase(),
+        amount: state.amountValue,
+        formattedAmount: '€ ' + state.amountValue.toFixed(2),
+        potje: state.selectedPotje,
+        potjeLabel: PotjesConfig[state.selectedPotje].label,
+        merchant: DOM.merchantInput.value.trim() || 'Onbekende leverancier',
+        date: DOM.receiptDate.value || new Date().toISOString().split('T')[0],
+        description: DOM.descriptionInput.value.trim(),
+        fileName: state.receiptFile.name,
+        thumbnailUrl: state.receiptDataUrl,
+        processedAt: new Date().toISOString()
+      };
+
+      try {
+        /* =====================================================================
+         * HOOK: BACKEND DATABASE / API OPSLAG
+         * =====================================================================
+         * Hier kun je via bijv. fetch() de data doorsturen naar je backend,
+         * Supabase, Firebase Firestore of een REST endpoint:
+         * 
+         * const response = await fetch('/api/bonnetjes', {
+         *   method: 'POST',
+         *   headers: { 'Content-Type': 'application/json' },
+         *   body: JSON.stringify(formDataPayload)
+         * });
+         * const result = await response.json();
+         * ===================================================================== */
+        
+        // Simuleer een snelle backend verwerkingstijd (400ms)
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        // Voeg toe aan lokale geschiedenis
+        addProcessedReceipt(formDataPayload);
+
+        // Toon succesmelding
+        showToast(`Bonnetje van ${formDataPayload.formattedAmount} succesvol verwerkt naar "${formDataPayload.potjeLabel}"!`, 'success');
+
+        // Reset het invoerformulier voor het volgende bonnetje
+        resetFormPreserveHistory();
+
+      } catch (err) {
+        console.error('Fout bij verwerken van bonnetje:', err);
+        showToast('Er is een fout opgetreden bij het opslaan van het bonnetje.', 'error');
+      } finally {
+        setSubmittingState(false);
+      }
+    }
+
+    /**
+     * Past visuele laadindicator toe op verzendknop
+     */
+    function setSubmittingState(isLoading) {
+      if (isLoading) {
+        DOM.btnSubmit.disabled = true;
+        DOM.submitIcon.classList.add('hidden');
+        DOM.submitSpinner.classList.remove('hidden');
+        DOM.submitBtnText.textContent = 'Bezig met verwerken...';
+        DOM.btnSubmit.classList.add('opacity-80', 'cursor-not-allowed');
+      } else {
+        DOM.btnSubmit.disabled = false;
+        DOM.submitIcon.classList.remove('hidden');
+        DOM.submitSpinner.classList.add('hidden');
+        DOM.submitBtnText.textContent = 'Bonnetje verwerken';
+        DOM.btnSubmit.classList.remove('opacity-80', 'cursor-not-allowed');
+      }
+    }
+
+    /**
+     * Reset formulier en wis preview (zonder geschiedenis te wissen)
+     */
+    function resetFormPreserveHistory() {
+      removeReceipt();
+      DOM.form.reset();
+      initDefaults();
+      state.amountValue = null;
+      state.selectedPotje = null;
+      
+      // Reset radio tiles styling
+      DOM.potjeTiles.forEach(tile => {
+        tile.classList.remove('border-brand-600', 'bg-brand-50/40', 'ring-2', 'ring-brand-500/20');
+        tile.classList.add('border-slate-200', 'bg-white');
+        const checkIcon = tile.querySelector('.check-icon');
+        if (checkIcon) checkIcon.classList.add('hidden');
+      });
+
+      if (DOM.potjeDropdown) {
+        DOM.potjeDropdown.value = '';
+      }
+
+      DOM.receiptError.classList.add('hidden');
+      DOM.amountError.classList.add('hidden');
+      DOM.potjeError.classList.add('hidden');
+    }
+
+    function resetForm() {
+      resetFormPreserveHistory();
+      showToast('Formulier leeggemaakt.', 'info');
+    }
+
+    // =========================================================================
+    // 8. OCR & AI HERKENNING HOOK (Klaar voor OpenAI Codex / Copilot)
+    // =========================================================================
+    /**
+     * OCR hook: wordt aangeroepen zodra een bonnetje wordt geplaatst.
+     * Hier kan later automatisch tekstherkenning aan gekoppeld worden.
+     * @param {File} file 
+     * @param {string} dataUrl 
+     */
+    function triggerOcrPreRecognition(file, dataUrl) {
+      /* =====================================================================
+       * HOOK: AUTOMATISCHE TEKSTHERKENNING (OCR)
+       * Voorbeeld: Stuur dataUrl of FormData door naar een OCR endpoint of
+       * Gemini / OpenAI Vision API om automatisch het bedrag & datum te vullen.
+       * 
+       * async function runOcr() {
+       *   const res = await fetch('/api/ocr', { method: 'POST', body: JSON.stringify({ image: dataUrl }) });
+       *   const data = await res.json();
+       *   if (data.detectedAmount) DOM.amountInput.value = data.detectedAmount.toFixed(2);
+       *   if (data.detectedMerchant) DOM.merchantInput.value = data.detectedMerchant;
+       *   if (data.detectedCategory) selectPotje(data.detectedCategory);
+       * }
+       * ===================================================================== */
+      console.log('OCR Hook gereed voor bestand:', file.name);
+    }
+
+    // =========================================================================
+    // 9. OVERZICHT VERWERKTE BONNETJES & GESCHIEDENIS
+    // =========================================================================
+
+    /**
+     * Voegt een verwerkt bonnetje toe aan het overzicht
+     */
+    function addProcessedReceipt(receipt) {
+      state.processedReceipts.unshift(receipt);
+      renderProcessedReceipts();
+    }
+
+    /**
+     * Rendert de lijst met recent verwerkte bonnetjes
+     */
+    function renderProcessedReceipts() {
+      const count = state.processedReceipts.length;
+      DOM.receiptsCountBadge.textContent = count;
+
+      if (count === 0) {
+        DOM.emptyStateList.classList.remove('hidden');
+        DOM.processedList.classList.add('hidden');
+        DOM.btnClearHistory.classList.add('hidden');
+        return;
+      }
+
+      DOM.emptyStateList.classList.add('hidden');
+      DOM.processedList.classList.remove('hidden');
+      DOM.btnClearHistory.classList.remove('hidden');
+
+      DOM.processedList.innerHTML = state.processedReceipts.map(item => `
+        <div class="py-3.5 flex items-center justify-between gap-4 smooth-transition hover:bg-slate-50/80 px-2 rounded-xl">
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="w-10 h-10 rounded-lg bg-slate-100 border border-slate-200 overflow-hidden flex-shrink-0 flex items-center justify-center">
+              ${item.thumbnailUrl && item.thumbnailUrl.startsWith('data:image') 
+                ? `<img src="${item.thumbnailUrl}" alt="Thumbnail" class="w-full h-full object-cover" />`
+                : (PotjesConfig[item.potje] && PotjesConfig[item.potje].image
+                    ? `<img src="${PotjesConfig[item.potje].image}" alt="${escapeHtml(item.potjeLabel)}" class="w-full h-full object-contain p-0.5 bg-white" referrerpolicy="no-referrer" />`
+                    : `<span class="text-base">${PotjesConfig[item.potje] ? PotjesConfig[item.potje].icon : '🧾'}</span>`
+                  )
+              }
+            </div>
+            <div class="min-w-0">
+              <div class="flex items-center gap-2">
+                <span class="text-sm font-bold text-slate-900 truncate">${escapeHtml(item.merchant)}</span>
+                <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100">
+                  ${escapeHtml(item.potjeLabel)}
+                </span>
+              </div>
+              <p class="text-xs text-slate-500 mt-0.5 flex items-center gap-2">
+                <span>📅 ${escapeHtml(item.date)}</span>
+                ${item.description ? `<span>&bull; ${escapeHtml(item.description)}</span>` : ''}
+              </p>
+            </div>
+          </div>
+
+          <div class="text-right flex-shrink-0">
+            <span class="font-mono font-bold text-sm text-slate-900">${escapeHtml(item.formattedAmount)}</span>
+            <span class="block text-[10px] text-emerald-600 font-semibold uppercase tracking-wider">✓ Verwerkt</span>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function clearHistory() {
+      state.processedReceipts = [];
+      renderProcessedReceipts();
+      showToast('Geschiedenis leeggemaakt.', 'info');
+    }
+
+    // =========================================================================
+    // 10. TEST FUNCTIE: VOORBEELD BONNETJE LADEN
+    // =========================================================================
+    /**
+     * Handige demo functie om direct een realistisch testbonnetje in te laden
+     */
+    function loadDemoReceipt() {
+      // Genereer een realistische mini canvas dummy kassabon
+      const canvas = document.createElement('canvas');
+      canvas.width = 300;
+      canvas.height = 420;
+      const ctx = canvas.getContext('2d');
+
+      // Witte kassabon achtergrond
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, 300, 420);
+
+      // Kartelrandje bovenaan en onderaan
+      ctx.fillStyle = '#f1f5f9';
+      for (let i = 0; i < 300; i += 15) {
+        ctx.beginPath();
+        ctx.arc(i + 7.5, 0, 6, 0, Math.PI);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(i + 7.5, 420, 6, Math.PI, 0);
+        ctx.fill();
+      }
+
+      // Kassabon tekst
+      ctx.fillStyle = '#0f172a';
+      ctx.font = 'bold 16px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('ALBERT HEIJN 1204', 150, 45);
+      
+      ctx.font = '11px monospace';
+      ctx.fillStyle = '#64748b';
+      ctx.fillText('Kassabon #849204', 150, 65);
+      ctx.fillText(new Date().toLocaleDateString('nl-NL'), 150, 80);
+
+      // Lijn
+      ctx.strokeStyle = '#cbd5e1';
+      ctx.beginPath();
+      ctx.moveTo(30, 95);
+      ctx.lineTo(270, 95);
+      ctx.stroke();
+
+      // Artikelen
+      ctx.textAlign = 'left';
+      ctx.fillStyle = '#1e293b';
+      ctx.font = '12px monospace';
+      ctx.fillText('1x Biologische Melk', 30, 125);
+      ctx.fillText('1x Koffiebonen 1kg', 30, 150);
+      ctx.fillText('1x Appels Elstar', 30, 175);
+      ctx.fillText('1x Verse Broodjes', 30, 200);
+
+      ctx.textAlign = 'right';
+      ctx.fillText('€ 1,89', 270, 125);
+      ctx.fillText('€ 8,99', 270, 150);
+      ctx.fillText('€ 2,45', 270, 175);
+      ctx.fillText('€ 3,12', 270, 200);
+
+      // Totaal lijn
+      ctx.beginPath();
+      ctx.moveTo(30, 220);
+      ctx.lineTo(270, 220);
+      ctx.stroke();
+
+      ctx.font = 'bold 16px monospace';
+      ctx.textAlign = 'left';
+      ctx.fillText('TOTAAL', 30, 255);
+      ctx.textAlign = 'right';
+      ctx.fillText('€ 16,45', 270, 255);
+
+      ctx.font = '10px monospace';
+      ctx.fillStyle = '#64748b';
+      ctx.textAlign = 'center';
+      ctx.fillText('BTW 9% inbegrepen: € 1,36', 150, 290);
+      ctx.fillText('BETAALD PER PIN', 150, 310);
+      ctx.fillText('Bedankt voor je bezoek!', 150, 350);
+
+      const dataUrl = canvas.toDataURL('image/png');
+
+      // Zet om naar een echt File object
+      canvas.toBlob((blob) => {
+        const file = new File([blob], 'albert-heijn-kassabon.png', { type: 'image/png' });
+        processFile(file, 'Voorbeeldbonnetje geladen');
+      });
+
+      // Vul ook automatisch de testgegevens in
+      DOM.amountInput.value = '16.45';
+      state.amountValue = 16.45;
+      DOM.merchantInput.value = 'Albert Heijn';
+      DOM.descriptionInput.value = 'Voorraad & catering benodigdheden';
+      selectPotje('the_gig');
+
+      showToast('✨ Voorbeeldbonnetje en gegevens succesvol ingeladen!', 'info');
+    }
+
+    // =========================================================================
+    // 11. HULPFUNCTIES & TOAST MELDINGEN
+    // =========================================================================
+    
+    /**
+     * Toont een nette notificatiebanner (toast)
+     */
+    function showToast(message, type = 'info') {
+      const colors = {
+        success: 'bg-emerald-50 text-emerald-900 border-emerald-200',
+        error:   'bg-rose-50 text-rose-900 border-rose-200',
+        info:    'bg-indigo-50 text-indigo-900 border-indigo-200'
+      };
+
+      const icons = {
+        success: `<svg class="w-4 h-4 text-emerald-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>`,
+        error:   `<svg class="w-4 h-4 text-rose-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/></svg>`,
+        info:    `<svg class="w-4 h-4 text-indigo-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg>`
+      };
+
+      DOM.toastContainer.innerHTML = `
+        <div class="p-3.5 rounded-xl border ${colors[type] || colors.info} flex items-center justify-between shadow-xs">
+          <div class="flex items-center gap-2.5 text-xs font-medium">
+            ${icons[type] || icons.info}
+            <span>${escapeHtml(message)}</span>
+          </div>
+          <button type="button" onclick="document.getElementById('toastContainer').classList.add('hidden')" class="text-slate-400 hover:text-slate-600 p-1">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+        </div>
+      `;
+
+      DOM.toastContainer.classList.remove('hidden');
+
+      // Automatisch verbergen na 5 seconden
+      clearTimeout(window._toastTimeout);
+      window._toastTimeout = setTimeout(() => {
+        DOM.toastContainer.classList.add('hidden');
+      }, 5000);
+    }
+
+    /**
+     * Veilig HTML escapen tegen XSS
+     */
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+  </script>
+</body>
+</html>

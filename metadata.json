@@ -1,0 +1,6 @@
+{
+  "name": "Bonnetjes Verwerken",
+  "description": "Overzichtelijk en responsive webformulier om bonnetjes te scannen, slepen, uploaden of plakken (CTRL+V), bedrag in te voeren en toe te wijzen aan budgetpotjes.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
