@@ -137,7 +137,7 @@
           <label class="block text-sm font-bold text-slate-900 tracking-tight">
             1. Bonnetje uploaden of plakken <span class="text-rose-500">*</span>
           </label>
-          <span class="text-xs text-slate-500 font-medium">PNG, JPG, WEBP, PDF (max. 10MB)</span>
+          <span class="text-xs text-slate-500 font-medium">PNG, JPG, WEBP, PDF (max. 3MB)</span>
         </div>
 
         <!-- De interactieve Dropzone / Plakzone -->
@@ -877,10 +877,10 @@
      * @param {string} sourceHint 
      */
     function processFile(file, sourceHint = 'Geüpload') {
-      // Basis validatie op bestandsgrootte (max 10MB)
-      const maxSize = 10 * 1024 * 1024;
+      // Basis validatie op bestandsgrootte (max 3MB)
+      const maxSize = 3 * 1024 * 1024;
       if (file.size > maxSize) {
-        showToast('Het bestand is te groot. Maximaal 10MB toegestaan.', 'error');
+        showToast('Het bestand is te groot. Maximaal 3MB toegestaan.', 'error');
         return;
       }
 
@@ -1113,23 +1113,30 @@
       };
 
       try {
-        /* =====================================================================
-         * HOOK: BACKEND DATABASE / API OPSLAG
-         * =====================================================================
-         * Hier kun je via bijv. fetch() de data doorsturen naar je backend,
-         * Supabase, Firebase Firestore of een REST endpoint:
-         * 
-         * const response = await fetch('/api/bonnetjes', {
-         *   method: 'POST',
-         *   headers: { 'Content-Type': 'application/json' },
-         *   body: JSON.stringify(formDataPayload)
-         * });
-         * const result = await response.json();
-         * ===================================================================== */
-        
-        // Simuleer een snelle backend verwerkingstijd (400ms)
-        await new Promise(resolve => setTimeout(resolve, 500));
-
+        const fileDataUrl = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = () => reject(new Error('Het bestand kon niet worden gelezen.'));
+          reader.readAsDataURL(state.receiptFile);
+        });
+        const response = await fetch('/api/bonnetjes', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ...formDataPayload,
+            thumbnailUrl: undefined,
+            mimeType: state.receiptFile.type,
+            fileBase64: fileDataUrl.split(',')[1]
+          })
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Upload mislukt.');
+        if (result.learning) {
+          showToast('Testbonnetje ontvangen door Make. De Drive-opslag wordt nu ingesteld; je invoer is behouden.', 'success');
+          return;
+        }
+        if (!result.fileId) throw new Error('Geen opslagbevestiging ontvangen.');
+        formDataPayload.driveFileId = result.fileId;
         // Voeg toe aan lokale geschiedenis
         addProcessedReceipt(formDataPayload);
 
@@ -1141,7 +1148,7 @@
 
       } catch (err) {
         console.error('Fout bij verwerken van bonnetje:', err);
-        showToast('Er is een fout opgetreden bij het opslaan van het bonnetje.', 'error');
+        showToast(err.message || 'Er is een fout opgetreden bij het opslaan van het bonnetje.', 'error');
       } finally {
         setSubmittingState(false);
       }
@@ -1448,3 +1455,4 @@
   </script>
 </body>
 </html>
+
