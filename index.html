@@ -137,7 +137,7 @@
           <label class="block text-sm font-bold text-slate-900 tracking-tight">
             1. Bonnetje uploaden of plakken <span class="text-rose-500">*</span>
           </label>
-          <span class="text-xs text-slate-500 font-medium">PNG, JPG, WEBP, PDF (max. 3MB)</span>
+          <span class="text-xs text-slate-500 font-medium">Foto’s tot 30MB worden automatisch verkleind · PDF tot 3MB</span>
         </div>
 
         <!-- De interactieve Dropzone / Plakzone -->
@@ -876,13 +876,76 @@
      * @param {File} file 
      * @param {string} sourceHint 
      */
-    function processFile(file, sourceHint = 'Geüpload') {
-      // Basis validatie op bestandsgrootte (max 3MB)
-      const maxSize = 3 * 1024 * 1024;
-      if (file.size > maxSize) {
-        showToast('Het bestand is te groot. Maximaal 3MB toegestaan.', 'error');
-        return;
+    let receiptSelection = 0;
+    let preparingReceipt = false;
+
+    async function prepareReceiptPhoto(file) {
+      if (file.size > 30 * 1024 * 1024) {
+        throw new Error('Deze foto is groter dan 30MB. Kies een kleinere foto.');
       }
+      const url = URL.createObjectURL(file);
+      try {
+        const image = new Image();
+        image.src = url;
+        await image.decode();
+        if (file.size <= 2 * 1024 * 1024 &&
+            Math.max(image.naturalWidth, image.naturalHeight) <= 3000 &&
+            ['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) return file;
+
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        if (!context) throw new Error('Foto kon niet worden verkleind.');
+        let longestSide = Math.min(3000, Math.max(image.naturalWidth, image.naturalHeight));
+        for (let attempt = 0; attempt < 6; attempt++) {
+          const scale = longestSide / Math.max(image.naturalWidth, image.naturalHeight);
+          canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+          canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+          context.fillStyle = '#fff';
+          context.fillRect(0, 0, canvas.width, canvas.height);
+          context.drawImage(image, 0, 0, canvas.width, canvas.height);
+          const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.88));
+          if (!blob) throw new Error('Foto kon niet worden verkleind.');
+          if (blob.size <= 2 * 1024 * 1024) {
+            return new File([blob], file.name.replace(/\.[^.]+$/, '') + '.jpg', {
+              type: 'image/jpeg', lastModified: file.lastModified
+            });
+          }
+          longestSide *= 0.8;
+        }
+        throw new Error('Deze foto kon niet voldoende worden verkleind. Probeer een andere foto.');
+      } catch (error) {
+        if (error.name === 'EncodingError') {
+          throw new Error('Je browser kan deze foto niet openen. Kies een JPG-foto of maak een schermafbeelding van de foto.');
+        }
+        throw error;
+      } finally {
+        URL.revokeObjectURL(url);
+      }
+    }
+
+    async function processFile(file, sourceHint = 'Geüpload') {
+      const selection = ++receiptSelection;
+      preparingReceipt = true;
+      setSubmittingState(true);
+      DOM.submitBtnText.textContent = 'Foto voorbereiden...';
+      try {
+        if (file.type === 'application/pdf') {
+          if (file.size > 3 * 1024 * 1024) throw new Error('PDF-bestanden mogen maximaal 3MB zijn.');
+        } else if (file.type.startsWith('image/') || /\.(jpe?g|png|webp|heic|heif)$/i.test(file.name)) {
+          const originalSize = file.size;
+          file = await prepareReceiptPhoto(file);
+          if (file.size < originalSize) sourceHint += ' · automatisch verkleind';
+        } else {
+          throw new Error('Kies een foto of een PDF-bestand.');
+        }
+        if (selection !== receiptSelection) return;
+        const dataUrl = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = () => reject(new Error('Het bestand kon niet worden gelezen.'));
+          reader.readAsDataURL(file);
+        });
+        if (selection !== receiptSelection) return;
 
       state.receiptFile = file;
       DOM.receiptError.classList.add('hidden');
@@ -894,12 +957,10 @@
 
       DOM.previewFileName.textContent = file.name;
       DOM.previewFileSize.textContent = formattedSize;
-      DOM.previewTimestamp.textContent = `${sourceHint} &bull; ${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+      DOM.previewTimestamp.textContent = `${sourceHint} · ${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
 
       // Inlezen als DataURL voor weergave
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        state.receiptDataUrl = e.target.result;
+        state.receiptDataUrl = dataUrl;
 
         if (file.type === 'application/pdf') {
           DOM.previewThumbnail.classList.add('hidden');
@@ -916,15 +977,23 @@
 
         // HOOK: Hier kun je optioneel direct OCR aftrappen!
         triggerOcrPreRecognition(file, state.receiptDataUrl);
-      };
-
-      reader.readAsDataURL(file);
+      } catch (error) {
+        if (selection === receiptSelection) showToast(error.message, 'error');
+      } finally {
+        if (selection === receiptSelection) {
+          preparingReceipt = false;
+          setSubmittingState(false);
+        }
+      }
     }
 
     /**
      * Verwijdert het huidige geselecteerde bonnetje
      */
     function removeReceipt() {
+      receiptSelection++;
+      if (preparingReceipt) setSubmittingState(false);
+      preparingReceipt = false;
       state.receiptFile = null;
       state.receiptDataUrl = null;
       DOM.fileInput.value = '';
@@ -1089,6 +1158,7 @@
      */
     async function handleSubmit(e) {
       e.preventDefault();
+      if (preparingReceipt) return;
 
       if (!validateForm()) {
         showToast('Vul alle verplichte velden correct in.', 'error');
