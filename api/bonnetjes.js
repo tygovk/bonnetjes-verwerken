@@ -1,6 +1,15 @@
 const MAX_FILE_BYTES = 3 * 1024 * 1024;
 const TYPES = new Set(['image/png', 'image/jpeg', 'image/webp', 'application/pdf']);
 
+export function receiptFileName(payload) {
+  const part = value => String(value || '').replace(/[\\/:*?"<>|\x00-\x1f]/g, ' ').replace(/\s+/g, ' ').trim();
+  const date = /^\d{4}-\d{2}-\d{2}$/.test(String(payload.date || ''))
+    ? payload.date : new Date().toISOString().slice(0, 10);
+  const extension = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp', 'application/pdf': 'pdf' }[payload.mimeType];
+  return [date, part(payload.merchant).slice(0, 60) || 'Onbekende winkel', part(payload.description).slice(0, 110)]
+    .filter(Boolean).join(' – ') + '.' + extension;
+}
+
 export function createHandler(settings) {
 return async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
@@ -19,7 +28,7 @@ return async function handler(req, res) {
       return res.status(400).json({ error: 'Ongeldig bonnetje. Gebruik PNG, JPG, WEBP of PDF van maximaal 3 MB.' });
     }
     const clean = {
-      fileName: payload.fileName.replace(/[\\/\x00-\x1f]/g, '_').slice(0, 200),
+      fileName: receiptFileName(payload),
       fileBase64: payload.fileBase64, mimeType: payload.mimeType,
       amount: payload.amount, potje: payload.potje.slice(0, 100),
       potjeLabel: String(payload.potjeLabel || '').slice(0, 100),
