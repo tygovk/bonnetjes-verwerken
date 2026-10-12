@@ -306,6 +306,12 @@
             </p>
           </div>
 
+          <div class="space-y-1.5">
+            <label for="nameInput" class="block text-sm font-bold text-slate-900 tracking-tight">Naam <span class="text-rose-500">*</span></label>
+            <input type="text" id="nameInput" name="name" required maxlength="100" autocomplete="name" placeholder="Je voor- en achternaam" class="block w-full px-3.5 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 smooth-transition" />
+            <p class="text-xs text-slate-500">Komt bij je bon in de tabel en Google Drive te staan.</p>
+          </div>
+
           <!-- Invoerveld: Winkel / Leverancier (Optioneel maar essentieel voor bonnetjes) -->
           <div class="space-y-1.5">
             <label for="merchantInput" class="block text-sm font-bold text-slate-900 tracking-tight">
@@ -648,6 +654,7 @@
       amountInput: document.getElementById('amountInput'),
       amountError: document.getElementById('amountError'),
       merchantInput: document.getElementById('merchantInput'),
+      nameInput: document.getElementById('nameInput'),
       receiptDate: document.getElementById('receiptDate'),
       descriptionInput: document.getElementById('descriptionInput'),
 
@@ -1124,6 +1131,10 @@
      */
     function validateForm() {
       let isValid = true;
+      if (!DOM.nameInput.value.trim()) {
+        DOM.nameInput.focus();
+        isValid = false;
+      }
 
       // 1. Controleer bonnetje
       if (!state.receiptFile) {
@@ -1175,6 +1186,7 @@
         potje: state.selectedPotje,
         potjeLabel: PotjesConfig[state.selectedPotje].label,
         merchant: DOM.merchantInput.value.trim() || 'Onbekende leverancier',
+        name: DOM.nameInput.value.trim(),
         date: DOM.receiptDate.value || new Date().toISOString().split('T')[0],
         description: DOM.descriptionInput.value.trim(),
         fileName: state.receiptFile.name,
