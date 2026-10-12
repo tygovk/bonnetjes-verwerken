@@ -6,7 +6,7 @@ export function receiptFileName(payload) {
   const date = /^\d{4}-\d{2}-\d{2}$/.test(String(payload.date || ''))
     ? payload.date : new Date().toISOString().slice(0, 10);
   const extension = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp', 'application/pdf': 'pdf' }[payload.mimeType];
-  return [date, part(payload.merchant).slice(0, 60) || 'Onbekende winkel', part(payload.description).slice(0, 110)]
+  return [date, part(payload.name).slice(0, 60), part(payload.merchant).slice(0, 60) || 'Onbekende winkel', part(payload.description).slice(0, 110)]
     .filter(Boolean).join(' – ') + '.' + extension;
 }
 
@@ -18,6 +18,9 @@ return async function handler(req, res) {
   if (!webhook) return res.status(503).json({ error: 'De Drive-koppeling is nog niet ingesteld.' });
   try {
     const payload = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+    if (typeof payload?.name !== 'string' || !payload.name.trim() || payload.name.trim().length > 100) {
+      return res.status(400).json({ error: 'Vul je naam in (maximaal 100 tekens).' });
+    }
     if (!payload || !TYPES.has(payload.mimeType) ||
         typeof payload.fileBase64 !== 'string' || !payload.fileBase64.length ||
         payload.fileBase64.length > Math.ceil(MAX_FILE_BYTES / 3) * 4 ||
@@ -33,6 +36,8 @@ return async function handler(req, res) {
       amount: payload.amount, potje: payload.potje.slice(0, 100),
       potjeLabel: String(payload.potjeLabel || '').slice(0, 100),
       merchant: String(payload.merchant || '').slice(0, 200),
+      name: payload.name.trim(),
+      nameCellJson: JSON.stringify({ stringValue: payload.name.trim() }),
       date: String(payload.date || '').slice(0, 10),
       description: String(payload.description || '').slice(0, 2000),
       id: String(payload.id || '').slice(0, 100), processedAt: new Date().toISOString()
