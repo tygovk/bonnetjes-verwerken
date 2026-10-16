@@ -308,8 +308,9 @@
 
           <div class="space-y-1.5">
             <label for="nameInput" class="block text-sm font-bold text-slate-900 tracking-tight">Naam <span class="text-rose-500">*</span></label>
-            <input type="text" id="nameInput" name="name" required maxlength="100" autocomplete="name" placeholder="Je voor- en achternaam" class="block w-full px-3.5 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 smooth-transition" />
-            <p class="text-xs text-slate-500">Komt bij je bon in de tabel en Google Drive te staan.</p>
+            <input type="text" id="nameInput" name="name" required maxlength="100" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="nameSuggestions" placeholder="Begin met typen en kies je naam" class="block w-full px-3.5 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 smooth-transition" />
+            <div id="nameSuggestions" role="listbox" aria-label="Namen uit de streeplijst" hidden class="max-h-64 overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-sm"></div>
+            <p class="text-xs text-slate-500">Typ je naam en kies uit de streeplijst.</p>
           </div>
 
           <!-- Invoerveld: Winkel / Leverancier (Optioneel maar essentieel voor bonnetjes) -->
@@ -1149,7 +1150,10 @@
       const paymentSelected = DOM.form.querySelector('input[name="paymentMethod"]:checked');
       document.getElementById('paymentError').classList.toggle('hidden', !!paymentSelected);
       if (!paymentSelected) isValid = false;
-      if (!DOM.nameInput.value.trim()) {
+      const knownName = receiptNames.find(name => normalizeName(name) === normalizeName(DOM.nameInput.value.trim()));
+      if (!knownName) {
+        DOM.nameInput.setCustomValidity('Kies een naam uit de streeplijst.');
+        DOM.nameInput.reportValidity();
         DOM.nameInput.focus();
         isValid = false;
       }
@@ -1204,7 +1208,7 @@
         potje: state.selectedPotje,
         potjeLabel: PotjesConfig[state.selectedPotje].label,
         merchant: DOM.merchantInput.value.trim() || 'Onbekende leverancier',
-        name: DOM.nameInput.value.trim(),
+        name: receiptNames.find(name => normalizeName(name) === normalizeName(DOM.nameInput.value.trim())),
         paymentMethod: DOM.form.querySelector('input[name="paymentMethod"]:checked').value,
         date: DOM.receiptDate.value || new Date().toISOString().split('T')[0],
         description: DOM.descriptionInput.value.trim(),
@@ -1556,7 +1560,68 @@
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#039;');
     }
-  </script>
+  
+    // Namen uit het tabblad streeplijst; alleen suggesties, geen bonnetjesdata.
+    const receiptNames = ["Alvin","Benjamin","Bernard","Bram","Coen","Daan","Demi","Diederik","Dirk","Elias","Eva","Famke","Fien","Finn","Fleur O","Fleur W","Friso","Guido","Gwen","Hessel","Hester","Janou","Jeroen","Jitske","Job B","Joost","Jorin","Julian v O","Juliette D","Kian","Koen","Liesanne","Linde","Lucas","Lute","Maarten H","Marijn","Marit","Mart vd M","Merijn","Minke","Niels","Oscar","Pim","Rebecca","Robyn","Roy","Sam","Sarah","Sjoerd","Stephan","Stijn","Suzanne","Teun","Teun k","Tim G","Tygo","Wouter"];
+    const nameField = document.getElementById('nameInput');
+    const nameSuggestions = document.getElementById('nameSuggestions');
+    let matchingNames = [], activeNameIndex = -1;
+    const normalizeName = value => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('nl');
+    function closeNameSuggestions() {
+      nameSuggestions.hidden = true;
+      nameField.setAttribute('aria-expanded', 'false');
+      nameField.removeAttribute('aria-activedescendant');
+      activeNameIndex = -1;
+    }
+    function chooseReceiptName(name) {
+      nameField.value = name;
+      nameField.setCustomValidity('');
+      closeNameSuggestions();
+      nameField.focus();
+    }
+    function showNameSuggestions() {
+      const query = normalizeName(nameField.value.trim());
+      matchingNames = query ? receiptNames.filter(name => normalizeName(name).includes(query)).sort((a,b) => Number(normalizeName(b).startsWith(query)) - Number(normalizeName(a).startsWith(query))).slice(0, 8) : [];
+      activeNameIndex = -1;
+      nameSuggestions.replaceChildren();
+      nameField.removeAttribute('aria-activedescendant');
+      matchingNames.forEach((name,index) => {
+        const option = document.createElement('button');
+        option.type = 'button'; option.id = 'receipt-name-' + index;
+        option.setAttribute('role', 'option'); option.setAttribute('aria-selected', 'false');
+        option.className = 'block w-full text-left px-3 py-2 text-sm text-slate-800 hover:bg-indigo-50 focus:bg-indigo-50';
+        option.textContent = name; option.tabIndex = -1;
+        option.addEventListener('mousedown', event => event.preventDefault());
+        option.addEventListener('click', () => chooseReceiptName(name));
+        nameSuggestions.appendChild(option);
+      });
+      nameSuggestions.hidden = !matchingNames.length;
+      nameField.setAttribute('aria-expanded', String(!!matchingNames.length));
+    }
+    nameField.addEventListener('input', () => {
+      nameField.setCustomValidity(receiptNames.some(name => normalizeName(name) === normalizeName(nameField.value.trim())) ? '' : 'Kies een naam uit de streeplijst.');
+      showNameSuggestions();
+    });
+    nameField.addEventListener('focus', showNameSuggestions);
+    nameField.addEventListener('blur', closeNameSuggestions);
+    nameField.addEventListener('keydown', event => {
+      if (event.key === 'Escape') { closeNameSuggestions(); return; }
+      if (event.key === 'Enter' && !nameSuggestions.hidden && activeNameIndex >= 0) {
+        event.preventDefault(); chooseReceiptName(matchingNames[activeNameIndex]); return;
+      }
+      if (!['ArrowDown', 'ArrowUp'].includes(event.key)) return;
+      event.preventDefault();
+      if (nameSuggestions.hidden) showNameSuggestions();
+      if (!matchingNames.length) return;
+      activeNameIndex = (activeNameIndex + (event.key === 'ArrowDown' ? 1 : -1) + matchingNames.length) % matchingNames.length;
+      [...nameSuggestions.children].forEach((option,index) => {
+        option.setAttribute('aria-selected', String(index === activeNameIndex));
+        option.classList.toggle('bg-indigo-50', index === activeNameIndex);
+      });
+      nameField.setAttribute('aria-activedescendant', 'receipt-name-' + activeNameIndex);
+    });
+    document.getElementById('receiptForm').addEventListener('reset', () => { nameField.setCustomValidity(''); closeNameSuggestions(); });
+</script>
 </body>
 </html>
 
