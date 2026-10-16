@@ -1244,6 +1244,9 @@
         // Toon succesmelding
         showToast(`Bonnetje van ${formDataPayload.formattedAmount} succesvol verwerkt naar "${formDataPayload.potjeLabel}"!`, 'success');
 
+        if(result.barSync?.synced)showToast('Bonnetje opgeslagen en automatisch als eigen inleg in de barlijst geboekt.', 'success');
+        else if(result.barSync?.pending)showToast('Bonnetje opgeslagen. De naam moet bij Rekeningen in de barlijst nog aan het juiste lid gekoppeld worden.', 'success');
+        else if(result.barSync?.error)showToast('Bonnetje staat in Drive, maar eigen inleg kon niet worden bijgewerkt. Bewaar dit bonnetje en controleer de barlijst.', 'error');
         // Reset het invoerformulier voor het volgende bonnetje
         resetFormPreserveHistory();
 
