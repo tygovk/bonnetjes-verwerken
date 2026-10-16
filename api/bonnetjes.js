@@ -30,7 +30,12 @@ return async function handler(req, res) {
         typeof payload.potje !== 'string' || !payload.potje) {
       return res.status(400).json({ error: 'Ongeldig bonnetje. Gebruik PNG, JPG, WEBP of PDF van maximaal 3 MB.' });
     }
+    if (payload.paymentMethod && !['ollie_pas', 'eigen_rekening'].includes(payload.paymentMethod)) {
+      return res.status(400).json({ error: 'Kies Ollie-pas of Eigen rekening.' });
+    }
     const clean = {
+      paymentMethod: payload.paymentMethod || '',
+      paymentMethodLabel: { ollie_pas: 'Ollie-pas', eigen_rekening: 'Eigen rekening' }[payload.paymentMethod] || '',
       fileName: receiptFileName(payload),
       fileBase64: payload.fileBase64, mimeType: payload.mimeType,
       amount: payload.amount, potje: payload.potje.slice(0, 100),
@@ -39,7 +44,8 @@ return async function handler(req, res) {
       name: payload.name.trim(),
       nameCellJson: JSON.stringify({ stringValue: payload.name.trim() }),
       date: String(payload.date || '').slice(0, 10),
-      description: String(payload.description || '').slice(0, 2000),
+      description: [String(payload.description || '').slice(0, 1900),
+        ({ ollie_pas: 'Betaald met: Ollie-pas', eigen_rekening: 'Betaald met: Eigen rekening' }[payload.paymentMethod] || '')].filter(Boolean).join(' | '),
       id: String(payload.id || '').slice(0, 100), processedAt: new Date().toISOString()
     };
     const upstream = await fetch(webhook, {
