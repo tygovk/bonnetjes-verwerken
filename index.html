@@ -333,6 +333,21 @@
             <p class="text-xs text-slate-500">Helpt bij het snel terugvinden in de administratie</p>
           </div>
 
+          <fieldset class="space-y-2 sm:col-span-2">
+            <legend class="text-sm font-bold text-slate-900">Betaald met <span class="text-rose-500">*</span></legend>
+            <div class="grid grid-cols-2 gap-3">
+              <label class="cursor-pointer">
+                <input type="radio" name="paymentMethod" value="ollie_pas" required class="peer sr-only" />
+                <span class="block rounded-xl border border-slate-300 bg-white px-4 py-3 text-center font-semibold peer-checked:bg-brand-50 peer-checked:border-brand-600 peer-checked:text-brand-700 peer-focus-visible:ring-2 peer-focus-visible:ring-brand-500">Ollie-pas</span>
+              </label>
+              <label class="cursor-pointer">
+                <input type="radio" name="paymentMethod" value="eigen_rekening" required class="peer sr-only" />
+                <span class="block rounded-xl border border-slate-300 bg-white px-4 py-3 text-center font-semibold peer-checked:bg-brand-50 peer-checked:border-brand-600 peer-checked:text-brand-700 peer-focus-visible:ring-2 peer-focus-visible:ring-brand-500">Eigen rekening</span>
+              </label>
+            </div>
+            <p id="paymentError" class="hidden text-xs text-rose-600">Kies waarmee je de bon hebt betaald.</p>
+          </fieldset>
+
           <!-- Datum van het bonnetje -->
           <div class="space-y-1.5">
             <label for="receiptDate" class="block text-sm font-bold text-slate-900 tracking-tight">
@@ -1131,6 +1146,9 @@
      */
     function validateForm() {
       let isValid = true;
+      const paymentSelected = DOM.form.querySelector('input[name="paymentMethod"]:checked');
+      document.getElementById('paymentError').classList.toggle('hidden', !!paymentSelected);
+      if (!paymentSelected) isValid = false;
       if (!DOM.nameInput.value.trim()) {
         DOM.nameInput.focus();
         isValid = false;
@@ -1187,6 +1205,7 @@
         potjeLabel: PotjesConfig[state.selectedPotje].label,
         merchant: DOM.merchantInput.value.trim() || 'Onbekende leverancier',
         name: DOM.nameInput.value.trim(),
+        paymentMethod: DOM.form.querySelector('input[name="paymentMethod"]:checked').value,
         date: DOM.receiptDate.value || new Date().toISOString().split('T')[0],
         description: DOM.descriptionInput.value.trim(),
         fileName: state.receiptFile.name,
