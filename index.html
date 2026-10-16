@@ -333,16 +333,16 @@
             <p class="text-xs text-slate-500">Helpt bij het snel terugvinden in de administratie</p>
           </div>
 
-          <fieldset class="space-y-2 sm:col-span-2">
+          <fieldset class="space-y-1.5">
             <legend class="text-sm font-bold text-slate-900">Betaald met <span class="text-rose-500">*</span></legend>
-            <div class="grid grid-cols-2 gap-3">
-              <label class="flex items-center gap-3 cursor-pointer py-2">
-                <input type="radio" name="paymentMethod" value="ollie_pas" required class="h-5 w-5 accent-indigo-600 cursor-pointer" />
-                <span class="text-sm font-semibold text-slate-900">Ollie-pas</span>
+            <div class="flex flex-col gap-1">
+              <label class="flex items-center gap-2 cursor-pointer py-1">
+                <input type="radio" name="paymentMethod" value="ollie_pas" required class="h-4 w-4 accent-indigo-600 cursor-pointer" />
+                <span class="text-sm font-medium text-slate-700">Ollie-pas</span>
               </label>
-              <label class="flex items-center gap-3 cursor-pointer py-2">
-                <input type="radio" name="paymentMethod" value="eigen_rekening" required class="h-5 w-5 accent-indigo-600 cursor-pointer" />
-                <span class="text-sm font-semibold text-slate-900">Eigen rekening</span>
+              <label class="flex items-center gap-2 cursor-pointer py-1">
+                <input type="radio" name="paymentMethod" value="eigen_rekening" required class="h-4 w-4 accent-indigo-600 cursor-pointer" />
+                <span class="text-sm font-medium text-slate-700">Eigen rekening</span>
               </label>
             </div>
             <p id="paymentError" class="hidden text-xs text-rose-600">Kies waarmee je de bon hebt betaald.</p>
