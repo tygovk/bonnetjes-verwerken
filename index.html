@@ -310,7 +310,7 @@
             <label for="nameInput" class="block text-sm font-bold text-slate-900 tracking-tight">Naam <span class="text-rose-500">*</span></label>
             <input type="text" id="nameInput" name="name" required maxlength="100" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="nameSuggestions" placeholder="Begin met typen en kies je naam" class="block w-full px-3.5 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 smooth-transition" />
             <div id="nameSuggestions" role="listbox" aria-label="Namen uit de streeplijst" hidden class="max-h-64 overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-sm"></div>
-            <p class="text-xs text-slate-500">Typ je naam en kies uit de streeplijst.</p>
+            <p class="text-xs text-slate-500">Typ om te zoeken en klik op je naam om deze te selecteren.</p>
           </div>
 
           <!-- Invoerveld: Winkel / Leverancier (Optioneel maar essentieel voor bonnetjes) -->
@@ -1150,7 +1150,7 @@
       const paymentSelected = DOM.form.querySelector('input[name="paymentMethod"]:checked');
       document.getElementById('paymentError').classList.toggle('hidden', !!paymentSelected);
       if (!paymentSelected) isValid = false;
-      const knownName = receiptNames.find(name => normalizeName(name) === normalizeName(DOM.nameInput.value.trim()));
+      const knownName = selectedReceiptName && DOM.nameInput.value === selectedReceiptName;
       if (!knownName) {
         DOM.nameInput.setCustomValidity('Kies een naam uit de streeplijst.');
         DOM.nameInput.reportValidity();
@@ -1208,7 +1208,7 @@
         potje: state.selectedPotje,
         potjeLabel: PotjesConfig[state.selectedPotje].label,
         merchant: DOM.merchantInput.value.trim() || 'Onbekende leverancier',
-        name: receiptNames.find(name => normalizeName(name) === normalizeName(DOM.nameInput.value.trim())),
+        name: selectedReceiptName,
         paymentMethod: DOM.form.querySelector('input[name="paymentMethod"]:checked').value,
         date: DOM.receiptDate.value || new Date().toISOString().split('T')[0],
         description: DOM.descriptionInput.value.trim(),
@@ -1566,6 +1566,7 @@
     const nameField = document.getElementById('nameInput');
     const nameSuggestions = document.getElementById('nameSuggestions');
     let matchingNames = [], activeNameIndex = -1;
+    let selectedReceiptName = null;
     const normalizeName = value => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('nl');
     function closeNameSuggestions() {
       nameSuggestions.hidden = true;
@@ -1574,6 +1575,7 @@
       activeNameIndex = -1;
     }
     function chooseReceiptName(name) {
+      selectedReceiptName = name;
       nameField.value = name;
       nameField.setCustomValidity('');
       closeNameSuggestions();
@@ -1599,7 +1601,8 @@
       nameField.setAttribute('aria-expanded', String(!!matchingNames.length));
     }
     nameField.addEventListener('input', () => {
-      nameField.setCustomValidity(receiptNames.some(name => normalizeName(name) === normalizeName(nameField.value.trim())) ? '' : 'Kies een naam uit de streeplijst.');
+      selectedReceiptName = null;
+      nameField.setCustomValidity('Klik op een naam uit de suggesties om deze te selecteren.');
       showNameSuggestions();
     });
     nameField.addEventListener('focus', showNameSuggestions);
@@ -1620,7 +1623,7 @@
       });
       nameField.setAttribute('aria-activedescendant', 'receipt-name-' + activeNameIndex);
     });
-    document.getElementById('receiptForm').addEventListener('reset', () => { nameField.setCustomValidity(''); closeNameSuggestions(); });
+    document.getElementById('receiptForm').addEventListener('reset', () => { selectedReceiptName = null; nameField.setCustomValidity(''); closeNameSuggestions(); });
 </script>
 </body>
 </html>
