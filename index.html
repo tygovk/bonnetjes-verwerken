@@ -336,13 +336,13 @@
           <fieldset class="space-y-2 sm:col-span-2">
             <legend class="text-sm font-bold text-slate-900">Betaald met <span class="text-rose-500">*</span></legend>
             <div class="grid grid-cols-2 gap-3">
-              <label class="cursor-pointer">
-                <input type="radio" name="paymentMethod" value="ollie_pas" required class="peer sr-only" />
-                <span class="block rounded-xl border border-slate-300 bg-white px-4 py-3 text-center font-semibold peer-checked:bg-brand-50 peer-checked:border-brand-600 peer-checked:text-brand-700 peer-focus-visible:ring-2 peer-focus-visible:ring-brand-500">Ollie-pas</span>
+              <label class="flex items-center gap-3 cursor-pointer py-2">
+                <input type="radio" name="paymentMethod" value="ollie_pas" required class="h-5 w-5 accent-indigo-600 cursor-pointer" />
+                <span class="text-sm font-semibold text-slate-900">Ollie-pas</span>
               </label>
-              <label class="cursor-pointer">
-                <input type="radio" name="paymentMethod" value="eigen_rekening" required class="peer sr-only" />
-                <span class="block rounded-xl border border-slate-300 bg-white px-4 py-3 text-center font-semibold peer-checked:bg-brand-50 peer-checked:border-brand-600 peer-checked:text-brand-700 peer-focus-visible:ring-2 peer-focus-visible:ring-brand-500">Eigen rekening</span>
+              <label class="flex items-center gap-3 cursor-pointer py-2">
+                <input type="radio" name="paymentMethod" value="eigen_rekening" required class="h-5 w-5 accent-indigo-600 cursor-pointer" />
+                <span class="text-sm font-semibold text-slate-900">Eigen rekening</span>
               </label>
             </div>
             <p id="paymentError" class="hidden text-xs text-rose-600">Kies waarmee je de bon hebt betaald.</p>
