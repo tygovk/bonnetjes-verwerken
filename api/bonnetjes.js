@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 const MAX_FILE_BYTES = 3 * 1024 * 1024;
 const TYPES = new Set(['image/png', 'image/jpeg', 'image/webp', 'application/pdf']);
 
@@ -63,7 +64,16 @@ return async function handler(req, res) {
     if (!result || typeof result.fileId !== 'string' || !result.fileId) {
       return res.status(502).json({ error: 'Nog geen opslagbevestiging van Google Drive ontvangen. Controleer Make voordat je opnieuw verzendt.' });
     }
-    return res.status(200).json({ fileId: result.fileId });
+    let barSync=null;
+    if(payload.paymentMethod==='eigen_rekening'){
+      try{
+        if(!settings.barSecret)throw Error('Koppeling ontbreekt');
+        const receiptId=createHash('sha256').update(payload.fileBase64+'|'+payload.name.trim().toLowerCase()+'|'+Math.round(payload.amount*100)+'|'+String(payload.date||'')).digest('hex');
+        const synced=await fetch('https://de-verbeterde-barlijst.vercel.app/api/receipt-sync',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+settings.barSecret},signal:AbortSignal.timeout(15000),body:JSON.stringify({id:receiptId,paymentMethod:'eigen_rekening',name:payload.name.trim(),amount:Math.round(payload.amount*100),merchant:payload.merchant,description:payload.description,date:payload.date,fileId:result.fileId})});
+        if(!synced.ok)throw Error('Synchronisatie mislukt');barSync=await synced.json();
+      }catch{barSync={error:true};}
+    }
+    return res.status(200).json({ fileId: result.fileId,barSync });
   } catch (error) {
     return res.status(error instanceof SyntaxError ? 400 : 502).json({
       error: error instanceof SyntaxError ? 'Ongeldige aanvraag.' : 'De upload is niet bevestigd. Je invoer is behouden; controleer Make voordat je opnieuw verzendt.'
@@ -73,5 +83,5 @@ return async function handler(req, res) {
 }
 
 export default function handler(req, res) {
-  return createHandler({ webhook: process.env.MAKE_RECEIPTS_WEBHOOK_URL, learning: false })(req, res);
+  return createHandler({ webhook: process.env.MAKE_RECEIPTS_WEBHOOK_URL, learning: false, barSecret: process.env.BARLIST_SYNC_SECRET })(req, res);
 }
